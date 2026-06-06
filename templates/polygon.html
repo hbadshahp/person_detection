@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Polygon Selector</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Restricted Area Selection</h2>
+
+<canvas id="canvas"></canvas>
+<br><br>
+
+<button onclick="savePolygon()">Save Polygon</button>
+<button onclick="clearPolygon()">Clear</button>
+
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+let img = new Image();
+img.src = "/snapshot";
+
+let points = [];
+
+img.onload = function () {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    draw();
+};
+
+canvas.addEventListener("click", function(e) {
+    const rect = canvas.getBoundingClientRect();
+
+    points.push([
+        Math.round(e.clientX - rect.left),
+        Math.round(e.clientY - rect.top)
+    ]);
+
+    draw();
+});
+
+function draw() {
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0);
+
+    if(points.length > 0){
+
+        ctx.beginPath();
+        ctx.moveTo(points[0][0], points[0][1]);
+
+        for(let i=1;i<points.length;i++){
+            ctx.lineTo(points[i][0], points[i][1]);
+        }
+
+        ctx.strokeStyle="red";
+        ctx.lineWidth=3;
+        ctx.stroke();
+
+        points.forEach(p=>{
+            ctx.beginPath();
+            ctx.arc(p[0],p[1],5,0,2*Math.PI);
+            ctx.fillStyle="blue";
+            ctx.fill();
+        });
+    }
+}
+
+function clearPolygon(){
+    points=[];
+    draw();
+}
+
+function savePolygon(){
+
+    fetch('/save_polygon',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({polygon:points})
+    })
+    .then(r=>r.text())
+    .then(alert);
+}
+</script>
+
+</body>
+</html>
