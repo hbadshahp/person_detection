@@ -1,17 +1,79 @@
-from flask import Flask, Response, render_template, request
+from flask import Flask, Response, render_template, request, redirect, url_for, session
 import cv2
 import json
 import threading
 import time
 import torch
 
+from datetime import datetime
+last_alarm_time = 0
+
+def save_alarm():
+
+    global last_alarm_time
+
+    if time.time() - last_alarm_time < 10:
+        return
+
+    last_alarm_time = time.time()
+
+    try:
+
+        with open(
+            "static/alarms.json",
+            "r"
+        ) as f:
+
+            alarms = json.load(f)
+
+    except:
+
+        alarms = []
+
+    alarms.insert(0, {
+
+    "time":
+    datetime.now().strftime(
+        "%d-%m-%Y %H:%M:%S"
+    ),
+
+    "event":
+    "Person Intrusion",
+
+    "status":
+    "NG"
+})
+
+    alarms = alarms[:100]
+
+    with open(
+        "static/alarms.json",
+        "w"
+    ) as f:
+
+        json.dump(
+            alarms,
+            f,
+            indent=4
+        )
 print("CUDA:", torch.cuda.is_available())
-print("GPU :", torch.cuda.get_device_name(0))
+
+if torch.cuda.is_available():
+    print("GPU :", torch.cuda.get_device_name(0))
+else:
+    print("Running on CPU")
 
 from ultralytics import YOLO
 from shapely.geometry import Point, Polygon
 
 app = Flask(__name__)
+app.secret_key = "iota2026"
+
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "iota2026"
+
+USER_USERNAME = "user"
+USER_PASSWORD = "123456"
 
 # -------------------------------
 # CONFIG
@@ -24,10 +86,19 @@ RTSP_URL = "rtsp://admin:cctv%40999@192.168.0.185:554/Streaming/Channels/102"
 # -------------------------------
 
 model = YOLO("yolov8n.pt")
-model.to("cuda")
+
+DEVICE = 0 if torch.cuda.is_available() else "cpu"
+
+if torch.cuda.is_available():
+    model.to("cuda")
+    print("Running YOLO on GPU")
+else:
+    model.to("cpu")
+    print("Running YOLO on CPU")
 # -------------------------------
 # LOAD POLYGON
 # -------------------------------
+
 
 def load_polygon():
     try:
@@ -66,6 +137,7 @@ latest_annotated = None
 def camera_reader():
 
     global latest_frame
+    global cap
 
     while True:
 
@@ -74,11 +146,16 @@ def camera_reader():
         if ret:
             latest_frame = frame.copy()
 
-            if latest_frame is not None:
-                print("Camera OK")
-
         else:
-            time.sleep(0.05)
+
+            print("Camera disconnected. Reconnecting...")
+
+            cap.release()
+
+            time.sleep(2)
+
+            cap = cv2.VideoCapture(RTSP_URL)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
 # -------------------------------
 # YOLO THREAD
@@ -93,7 +170,6 @@ def detector():
     while True:
 
         if latest_frame is None:
-            print("Detector OK")
             time.sleep(0.01)
             continue
 
@@ -103,10 +179,10 @@ def detector():
 
         results = model(
             frame,
-            classes=[0],     # person only
+            classes=[0],
             imgsz=320,
             conf=0.4,
-            device=0,
+            device=DEVICE,
             verbose=False
         )
 
@@ -153,6 +229,7 @@ def detector():
             if inside:
                 color = (0, 0, 255)
                 status = "NG"
+                save_alarm()
 
             cv2.rectangle(
                 annotated,
@@ -192,8 +269,6 @@ def detector():
 
         if annotated is not None:
             latest_annotated = annotated.copy()
-            print("Detector OK")
-
         time.sleep(0.01)
 
 # -------------------------------
@@ -258,22 +333,156 @@ def generate_frames():
 # ROUTES
 # -------------------------------
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+
+            session['logged_in'] = True
+            session['role'] = 'admin'
+            return redirect('/')
+
+        elif username == USER_USERNAME and password == USER_PASSWORD:
+
+            session['logged_in'] = True
+            session['role'] = 'user'
+            return redirect('/')
+
+        return redirect('/login')
+
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Login</title>
+
+    <style>
+
+body{
+    margin:0;
+    padding:0;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:linear-gradient(135deg,#eef2f7,#dce6f2);
+    font-family:Arial,sans-serif;
+    }
+
+.login-box{
+    width:450px;
+    background:white;
+    padding:45px;
+    border-radius:12px;
+    box-shadow:0 0 20px rgba(0,0,0,0.15);
+    text-align:center;
+}
+
+.logo{
+    width:160px;
+    height:auto;
+    margin-bottom:20px;
+}
+
+h2{
+    margin-bottom:25px;
+    color:#333;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    margin-bottom:15px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    background:#007bff;
+    color:white;
+    font-size:16px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#0056b3;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <img src="/static/logo.png" class="logo">
+
+    <h3 style="color:#666;margin-top:0;">
+    RGAC INDIA Engineering & Automation
+    </h3>
+
+    <h2>Person Intrusion Detection</h2>
+
+    <form method="POST">
+
+        <input type="text"
+               name="username"
+               placeholder="Username"
+               required>
+
+        <input type="password"
+               name="password"
+               placeholder="Password"
+               required>
+
+        <button type="submit">
+            Login
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
+"""
+@app.route('/logout')
+def logout():
+
+    session.clear()
+
+    return redirect('/login')
+    
 @app.route('/')
 def index():
 
-    return """
-    <html>
-    <body>
-        <h2>Person Intrusion Detection</h2>
-        <img src="/video_feed" width="1280">
-        <br><br>
-        <a href="/polygon">Polygon Setup</a>
-    </body>
-    </html>
-    """
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    role = session.get('role')
+
+    return render_template(
+        "dashboard.html",
+        role=role
+    )
 
 @app.route('/video_feed')
 def video_feed():
+
+    if not session.get('logged_in'):
+        return redirect('/login')
 
     return Response(
         generate_frames(),
@@ -283,12 +492,20 @@ def video_feed():
 @app.route('/polygon')
 def polygon_page():
 
-    return render_template(
-        'polygon.html'
-    )
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    if session.get('role') != 'admin':
+        return "Admin Access Required", 403
+
+    return render_template('polygon.html')
+    
 
 @app.route('/snapshot')
 def snapshot():
+
+    if not session.get('logged_in'):
+        return redirect('/login')
 
     global latest_frame
 
@@ -305,33 +522,49 @@ def snapshot():
         mimetype='image/jpeg'
     )
 
-@app.route(
-    '/save_polygon',
-    methods=['POST']
-)
+@app.route('/save_polygon', methods=['POST'])
 def save_polygon():
+
+    if not session.get('logged_in'):
+        return "Unauthorized", 401
+
+    if session.get('role') != 'admin':
+        return "Admin Access Required", 403
 
     global polygon
 
     data = request.get_json()
 
-    with open(
-        "static/polygon.json",
-        "w"
-    ) as f:
+    with open("static/polygon.json", "w") as f:
+        json.dump(data, f, indent=4)
 
-        json.dump(
-            data,
-            f,
-            indent=4
-        )
-
-    polygon = Polygon(
-        data["polygon"]
-    )
+    polygon = Polygon(data["polygon"])
 
     return "Polygon Saved Successfully"
 
+@app.route('/alarms')
+def alarms():
+
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    try:
+
+        with open(
+            "static/alarms.json",
+            "r"
+        ) as f:
+
+            data = json.load(f)
+
+    except:
+
+        data = []
+
+    return render_template(
+        "alarms.html",
+        alarms=data
+    )
 # -------------------------------
 # MAIN
 # -------------------------------

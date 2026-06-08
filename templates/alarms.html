@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>Alarm History</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:#eef2f7;
+}
+
+/* HEADER */
+
+.header{
+    height:90px;
+    background:#ffffff;
+    display:flex;
+    align-items:center;
+    padding:0 25px;
+    box-shadow:0 2px 12px rgba(0,0,0,.08);
+    border-bottom:1px solid #dfe5ec;
+}
+
+.logo{
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    object-fit:contain;
+}
+
+.company{
+    font-size:34px;
+    font-weight:700;
+    margin-left:20px;
+    color:#1f2937;
+}
+
+.back-btn{
+    margin-left:auto;
+    text-decoration:none;
+    background:#2563eb;
+    color:white;
+    padding:12px 20px;
+    border-radius:10px;
+    font-weight:600;
+}
+
+.back-btn:hover{
+    background:#1d4ed8;
+}
+
+/* CONTENT */
+
+.container{
+    padding:20px;
+}
+
+.card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 4px 18px rgba(0,0,0,.08);
+}
+
+.title{
+    font-size:28px;
+    font-weight:700;
+    color:#1f2937;
+    margin-bottom:10px;
+}
+
+.total{
+    color:#6b7280;
+    font-size:16px;
+    margin-bottom:20px;
+}
+
+/* TABLE */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#1f2937;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
+td{
+    padding:14px;
+    text-align:center;
+    border-bottom:1px solid #e5e7eb;
+}
+
+tr:hover{
+    background:#f8fafc;
+}
+
+.status{
+    color:#dc2626;
+    font-weight:700;
+}
+
+/* EMPTY */
+
+.empty{
+    text-align:center;
+    padding:40px;
+    color:#6b7280;
+    font-size:18px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+
+<img src="/static/logo.png" class="logo">
+
+<div class="company">
+    RGAC INDIA Engineering & Automation
+</div>
+
+<a href="/" class="back-btn">
+    Back Dashboard
+</a>
+
+
+</div>
+
+<div class="container">
+
+
+<div class="card">
+
+    <div class="title">
+        Alarm History
+    </div>
+
+    <div class="total">
+        Total Alarms : {{ alarms|length }}
+    </div>
+
+    {% if alarms|length == 0 %}
+
+    <div class="empty">
+        No Alarm Records Found
+    </div>
+
+    {% else %}
+
+    <table>
+
+        <tr>
+            <th>Time</th>
+            <th>Event</th>
+            <th>Status</th>
+        </tr>
+
+        {% for a in alarms %}
+
+        <tr>
+
+            <td>
+                {{ a.time }}
+            </td>
+
+            <td>
+                {{ a.event }}
+            </td>
+
+            <td class="status">
+                {% if a.status %}
+                    {{ a.status }}
+                {% else %}
+                    NG
+                {% endif %}
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    {% endif %}
+
+</div>
+
+
+</div>
+
+</body>
+
+</html>

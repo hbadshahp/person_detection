@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Person Intrusion Detection Dashboard</title>
+
+```
+<style>
+
+    *{
+        box-sizing:border-box;
+    }
+
+    body{
+        margin:0;
+        font-family:'Segoe UI', Arial, sans-serif;
+        background:#eef2f7;
+    }
+
+    /* HEADER */
+
+    .header{
+        height:90px;
+        background:#ffffff;
+        display:flex;
+        align-items:center;
+        padding:0 25px;
+        box-shadow:0 2px 12px rgba(0,0,0,.08);
+        border-bottom:1px solid #dfe5ec;
+    }
+
+    .logo{
+        width:65px;
+        height:65px;
+        border-radius:50%;
+        object-fit:contain;
+    }
+
+    .company{
+        font-size:34px;
+        font-weight:700;
+        margin-left:20px;
+        color:#1f2937;
+    }
+
+    .status{
+        margin-left:auto;
+        font-size:16px;
+        font-weight:600;
+        color:#6b7280;
+    }
+
+    /* MAIN */
+
+    .main{
+        display:flex;
+        height:calc(100vh - 90px);
+        padding:15px;
+        gap:15px;
+    }
+
+    /* VIDEO */
+
+    .video-section{
+        flex:1;
+    }
+
+    .video-box{
+        width:100%;
+        height:100%;
+        background:white;
+        border-radius:16px;
+        overflow:hidden;
+        border:1px solid #dfe5ec;
+        box-shadow:0 4px 18px rgba(0,0,0,.08);
+    }
+
+    .video-box img{
+        width:100%;
+        height:100%;
+        object-fit:contain;
+    }
+
+    /* RIGHT PANEL */
+
+    .side{
+        width:320px;
+        display:flex;
+        flex-direction:column;
+    }
+
+    .menu{
+        height:90px;
+        margin-bottom:15px;
+
+        background:white;
+
+        border:1px solid #d8dee6;
+        border-radius:14px;
+
+        font-size:24px;
+        font-weight:600;
+
+        display:flex;
+        justify-content:center;
+        align-items:center;
+
+        text-decoration:none;
+        color:#1f2937;
+
+        box-shadow:0 2px 8px rgba(0,0,0,.06);
+
+        transition:all .2s ease;
+    }
+
+    .menu:hover{
+        background:#f8fafc;
+        transform:translateY(-2px);
+        box-shadow:0 6px 15px rgba(0,0,0,.12);
+    }
+
+    .logout{
+        background:#dc2626;
+        color:white;
+        border:none;
+    }
+
+    .logout:hover{
+        background:#b91c1c;
+    }
+
+    .disabled{
+        cursor:default;
+    }
+
+    .disabled:hover{
+        transform:none;
+        background:white;
+    }
+
+</style>
+```
+
+</head>
+
+<body>
+
+```
+<div class="header">
+
+    <img src="/static/logo.png" class="logo">
+
+    <div class="company">
+        RGAC INDIA Engineering & Automation
+    </div>
+
+    <div class="status">
+        Person Intrusion Detection System
+    </div>
+
+</div>
+
+<div class="main">
+
+    <div class="video-section">
+
+        <div class="video-box">
+
+            <img src="/video_feed">
+
+        </div>
+
+    </div>
+
+    <div class="side">
+
+        {% if role == "admin" %}
+        <a class="menu" href="/polygon">
+            Polygon Setup
+        </a>
+        {% endif %}
+
+        <a class="menu" href="/alarms">
+            Alarm History
+        </a>
+
+        <div class="menu disabled">
+            NG Images History
+        </div>
+
+        <a class="menu logout" href="/logout">
+            Logout
+        </a>
+
+    </div>
+
+</div>
+```
+
+</body>
+
+</html>

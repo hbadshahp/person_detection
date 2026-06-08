@@ -7,19 +7,68 @@
             border: 2px solid black;
             cursor: crosshair;
         }
+        body{
+             margin:0;
+             background:#f4f6f9;
+             font-family:Arial;
+    }
+
+.header{
+    background:white;
+    padding:15px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
+
+.container{
+    padding:20px;
+}
+
+canvas{
+    border:3px solid #333;
+    background:white;
+}
+
+.buttons{
+    margin-top:15px;
+}
+
+button{
+    padding:12px 25px;
+    font-size:16px;
+    margin-right:10px;
+    cursor:pointer;
+}
     </style>
 </head>
 <body>
 
-<h2>Restricted Area Selection</h2>
+<div class="header">
+    <h2>Restricted Area Selection</h2>
+    <a href="/">← Back Dashboard</a>
+</div>
 
-<canvas id="canvas"></canvas>
-<br><br>
+<div class="container">
 
-<button onclick="savePolygon()">Save Polygon</button>
-<button onclick="clearPolygon()">Clear</button>
+    <canvas id="canvas"></canvas>
 
+    <div class="buttons">
+
+        <button onclick="savePolygon()">
+            Save Polygon
+        </button>
+
+        <button onclick="clearPolygon()">
+            Clear
+        </button>
+
+    </div>
+
+</div>
 <script>
+
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
@@ -28,13 +77,16 @@ img.src = "/snapshot";
 
 let points = [];
 
-img.onload = function () {
+img.onload = function(){
+
     canvas.width = img.width;
     canvas.height = img.height;
+
     draw();
 };
 
-canvas.addEventListener("click", function(e) {
+canvas.addEventListener("click",function(e){
+
     const rect = canvas.getBoundingClientRect();
 
     points.push([
@@ -45,18 +97,36 @@ canvas.addEventListener("click", function(e) {
     draw();
 });
 
-function draw() {
+function draw(){
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img,0,0);
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
 
-    if(points.length > 0){
+    ctx.drawImage(
+        img,
+        0,
+        0
+    );
+
+    if(points.length>0){
 
         ctx.beginPath();
-        ctx.moveTo(points[0][0], points[0][1]);
+
+        ctx.moveTo(
+            points[0][0],
+            points[0][1]
+        );
 
         for(let i=1;i<points.length;i++){
-            ctx.lineTo(points[i][0], points[i][1]);
+
+            ctx.lineTo(
+                points[i][0],
+                points[i][1]
+            );
         }
 
         ctx.strokeStyle="red";
@@ -64,30 +134,71 @@ function draw() {
         ctx.stroke();
 
         points.forEach(p=>{
+
             ctx.beginPath();
-            ctx.arc(p[0],p[1],5,0,2*Math.PI);
+
+            ctx.arc(
+                p[0],
+                p[1],
+                5,
+                0,
+                Math.PI*2
+            );
+
             ctx.fillStyle="blue";
             ctx.fill();
+
         });
     }
 }
 
 function clearPolygon(){
+
     points=[];
+
     draw();
 }
 
 function savePolygon(){
 
-    fetch('/save_polygon',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({polygon:points})
-    })
-    .then(r=>r.text())
-    .then(alert);
-}
-</script>
+    if(points.length < 4){
 
+        alert(
+            "Minimum 4 points required"
+        );
+
+        return;
+    }
+
+    let polygonPoints = [...points];
+
+    polygonPoints.push(points[0]);
+
+    fetch('/save_polygon',{
+
+        method:'POST',
+
+        headers:{
+            'Content-Type':'application/json'
+        },
+
+        body:JSON.stringify({
+            polygon:polygonPoints
+        })
+
+    })
+
+    .then(r=>r.text())
+
+    .then(msg=>{
+
+        alert(msg);
+
+        window.location.href="/";
+
+    });
+}
+
+</script>
 </body>
 </html>
