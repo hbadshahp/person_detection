@@ -5,7 +5,7 @@
 <head>
     <title>Person Intrusion Detection Dashboard</title>
 
-```
+
 <style>
 
     *{
@@ -140,13 +140,13 @@
     }
 
 </style>
-```
+
 
 </head>
 
 <body>
 
-```
+
 <div class="header">
 
     <img src="/static/logo.png" class="logo">
@@ -185,10 +185,22 @@
             Alarm History
         </a>
 
-        <div class="menu disabled">
-            NG Images History
-        </div>
+        <a class="menu" href="/ng_images">
+           NG Images History
+        </a>
+        {% if role == "admin" %}
 
+        <a class="menu" href="/toggle_security">
+
+          {% if security_enabled %}
+             🟢 Security ON
+               {% else %}
+             🔴 Security OFF
+               {% endif %}
+
+        </a>
+
+{% endif %}
         <a class="menu logout" href="/logout">
             Logout
         </a>
@@ -196,7 +208,7 @@
     </div>
 
 </div>
-```
+
 
 </body>
 

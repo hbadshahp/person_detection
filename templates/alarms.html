@@ -7,6 +7,18 @@
 <title>Alarm History</title>
 
 <style>
+.clear-btn{
+    background:#dc2626;
+    color:white;
+    padding:12px 20px;
+    border-radius:10px;
+    text-decoration:none;
+    margin-left:10px;
+}
+
+.clear-btn:hover{
+    background:#b91c1c;
+}
 
 *{
     box-sizing:border-box;
@@ -141,6 +153,17 @@ tr:hover{
     Back Dashboard
 </a>
 
+{% if role=="admin" %}
+
+<a class="clear-btn"
+   href="/clear_alarm_history"
+   onclick="return confirm('Clear All Alarm History ?')">
+
+   Clear History
+
+</a>
+
+{% endif %}
 
 </div>
 

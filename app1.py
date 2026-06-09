@@ -4,11 +4,13 @@ import json
 import threading
 import time
 import torch
+import os
 
 from datetime import datetime
 last_alarm_time = 0
+security_enabled = True
 
-def save_alarm():
+def save_alarm(frame):
 
     global last_alarm_time
 
@@ -16,6 +18,24 @@ def save_alarm():
         return
 
     last_alarm_time = time.time()
+
+    timestamp = datetime.now()
+
+    filename = timestamp.strftime(
+        "alarm_%Y%m%d_%H%M%S.jpg"
+    )
+
+    image_path = os.path.join(
+        "static",
+        "alarm_images",
+        filename
+    )
+
+    # Image Save
+    cv2.imwrite(
+        image_path,
+        frame
+    )
 
     try:
 
@@ -32,17 +52,20 @@ def save_alarm():
 
     alarms.insert(0, {
 
-    "time":
-    datetime.now().strftime(
-        "%d-%m-%Y %H:%M:%S"
-    ),
+        "time":
+        timestamp.strftime(
+            "%d-%m-%Y %H:%M:%S"
+        ),
 
-    "event":
-    "Person Intrusion",
+        "event":
+        "Person Intrusion",
 
-    "status":
-    "NG"
-})
+        "status":
+        "NG",
+
+        "image":
+        filename
+    })
 
     alarms = alarms[:100]
 
@@ -227,9 +250,12 @@ def detector():
             status = "OK"
 
             if inside:
+
                 color = (0, 0, 255)
                 status = "NG"
-                save_alarm()
+
+                if security_enabled:
+                     save_alarm(frame)
 
             cv2.rectangle(
                 annotated,
@@ -474,8 +500,9 @@ def index():
     role = session.get('role')
 
     return render_template(
-        "dashboard.html",
-        role=role
+         "dashboard.html",
+          role=role,
+          security_enabled=security_enabled
     )
 
 @app.route('/video_feed')
@@ -542,6 +569,20 @@ def save_polygon():
 
     return "Polygon Saved Successfully"
 
+@app.route('/toggle_security')
+def toggle_security():
+
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    if session.get('role') != 'admin':
+        return "Admin Access Required", 403
+
+    global security_enabled
+
+    security_enabled = not security_enabled
+
+    return redirect('/')
 @app.route('/alarms')
 def alarms():
 
@@ -563,8 +604,103 @@ def alarms():
 
     return render_template(
         "alarms.html",
-        alarms=data
+        alarms=data,
+        role=session.get('role')
     )
+    
+@app.route('/ng_images')
+def ng_images():
+
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    try:
+
+        with open(
+            "static/alarms.json",
+            "r"
+        ) as f:
+
+            data = json.load(f)
+
+    except:
+
+        data = []
+
+    valid_data = []
+
+    for a in data:
+
+        image_file = a.get("image")
+
+        if image_file and os.path.exists(
+
+            os.path.join(
+                "static",
+                "alarm_images",
+                image_file
+            )
+
+        ):
+
+            valid_data.append(a)
+
+    return render_template(
+        "ng_images.html",
+        alarms=valid_data,
+        role=session.get('role')
+    )
+    
+@app.route('/delete_image/<filename>')
+def delete_image(filename):
+
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    if session.get('role') != 'admin':
+        return "Admin Access Required", 403
+
+    image_path = os.path.join(
+        "static",
+        "alarm_images",
+        filename
+    )
+
+    if os.path.exists(image_path):
+        os.remove(image_path)
+
+    return redirect('/ng_images')
+
+@app.route('/clear_alarm_history')
+def clear_alarm_history():
+
+    if not session.get('logged_in'):
+        return redirect('/login')
+
+    if session.get('role') != 'admin':
+        return "Admin Access Required", 403
+
+    # Clear JSON
+    with open("static/alarms.json", "w") as f:
+        json.dump([], f)
+
+    # Delete all NG images
+    image_folder = os.path.join(
+        "static",
+        "alarm_images"
+    )
+
+    for file in os.listdir(image_folder):
+
+        file_path = os.path.join(
+            image_folder,
+            file
+        )
+
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    return redirect('/alarms')
 # -------------------------------
 # MAIN
 # -------------------------------
