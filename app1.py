@@ -239,12 +239,11 @@ def detector():
             x2 = int(x2)
             y2 = int(y2)
 
-            cx = int((x1 + x2) / 2)
-            cy = int((y1 + y2) / 2)
+            from shapely.geometry import box
 
-            inside = polygon.contains(
-                Point(cx, cy)
-            )
+            person_box = box(x1, y1, x2, y2)
+
+            inside = polygon.intersects(person_box)
 
             color = (0, 255, 0)
             status = "OK"
@@ -263,14 +262,6 @@ def detector():
                 (x2, y2),
                 color,
                 2
-            )
-
-            cv2.circle(
-                annotated,
-                (cx, cy),
-                5,
-                color,
-                -1
             )
 
             cv2.putText(
